@@ -1,0 +1,6 @@
+[Unit]
+Description=periodic check for running program
+
+[Timer]
+OnBootSec=300
+OnUnitActiveSec=10
