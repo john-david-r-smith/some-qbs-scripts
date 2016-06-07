@@ -1,6 +1,10 @@
 #!/bin/bash
 
 #functions
+vecho()
+{
+    if [ $verbose -eq 1 ]; then echo "$1"; fi;
+}
 do_file()
 {
 if [ -f "$1" ]; then
@@ -14,27 +18,30 @@ if [ -f "$1" ]; then
         if [ $loc_vm == $path_tmp_files ]; then continue; fi;
         if [ $loc_vm == $path_copies    ]; then continue; fi;
 
-        if [ $verbose -eq 1 ]; then
-            echo ">>>>>>do_file<<<<<<";
-            echo "file  : $loc_file";
-            echo "vm    : $loc_vm";
-            echo "path  : $loc_p";
-            echo "f name: $loc_f";
-        fi;
-
+        vecho ">>>>>>do_file<<<<<<";
+        vecho "file  : $loc_file";
+        vecho "vm    : $loc_vm";
+        vecho "path  : $loc_p";
+        vecho "f name: $loc_f";
+        
         path_qbs="$path_tmp_files/$loc_vm"
         path_tf="$path_qbs/$loc_p";
-        mkdir -p "$path_tf";
-        cp -la "$loc_file" "$path_tf";
-        qvm-move-to-vm --without-progress "$loc_vm" "$path_qbs";
-
+        sudo -u user mkdir -p "$path_tf";
+        vecho "> cp -la '$loc_file' '$path_tf'";
+        sudo -u user cp -la "$loc_file" "$path_tf";
+        cd "$path_qbs";
+        qvm-copy-to-vm --without-progress "$loc_vm" .;
         if [ $? -eq 0 ]; 
         then 
-            #OK => tmp file is gone
+            vecho "> cd '$path'";
+            cd "$path";
+            #OK
+            vecho "SUCCESS: qvm-copy";
             if [ $copy -eq 1 ]; 
             then 
+                vecho "creating a copy";
                 path_cp="$path_copies/$loc_vm/$loc_p";
-                mkdir -p "$path_cp";
+                sudo -u user mkdir -p "$path_cp";
                 #search for a free filename
                 target_file_base="$path_cp/$loc_f";
                 target_file="$path_cp/$loc_f";
@@ -45,21 +52,28 @@ if [ -f "$1" ]; then
                     target_file="$target_file_base$line$cnt"; 
                 done;
                 #move
-                mv $loc_file "$target_file";
-                if [ $verbose -eq 1 ]; then
-                    echo "copied tmp file from:";
-                    echo $loc_file;
-                    echo "to:";
-                    echo "$path_cp/$loc_f";
-                fi;
+                sudo -u user mv "$loc_file" "$target_file";
+                vecho "copied file from:";
+                vecho $loc_file;
+                vecho "to:";
+                vecho "$path_cp/$loc_f";
             else
                 #rm file
+                vecho "> rm '$loc_file'";
                 rm $loc_file;
             fi;
         else
+            vecho "> cd '$path'";
+            cd "$path";
             #failed! => rm tmp file
+            vecho "FAIL: qvm-copy";
+            vecho "> rm '$path_tf/$loc_f'"
             rm "$path_tf/$loc_f";
         fi;
+        vecho "> rm '$path_tf/$loc_f'"
+        rm "$path_tf/$loc_f";
+        vecho "cleaning empty subdirs in '$path_tmp_files'";
+        find "$path_tmp_files" -type d -empty -delete;
     fi;
 fi;
 }
@@ -106,18 +120,15 @@ if [ $print_help -eq 1 ]; then
 fi;
 
 #make path
-mkdir -p "$path";
+sudo -u user mkdir -p "$path";
 cd "$path";
 if ! [ $? -eq 0 ]; then exit 1; fi; 
 
-
-if [ $verbose -eq 1 ]; then
-    echo "path: $path"
-    echo "path for copies: $path_copies";
-    echo "path for temp files: $path_tmp_files";
-    echo "keep a copy: $copy";
-    echo "retry: $retry";
-fi;
+vecho "path: $path"
+vecho "path for copies: $path_copies";
+vecho "path for temp files: $path_tmp_files";
+vecho "keep a copy: $copy";
+vecho "retry: $retry";
 
 inotifywait -r -e moved_to -e create --format "%w%f" -m -q . \
     | while read file; do

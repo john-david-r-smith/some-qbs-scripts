@@ -1,0 +1,8 @@
+[Unit]
+Description=auto copy files to other vms
+
+[Service]
+ExecStart=/rw/config/scripts/auto-qvm-copy-to-vm.sh &
+ExecStop=/usr/bin/killall auto-qvm-copy-to-vm -s 9
+RemainAfterActive=yes
+Type=oneshot
