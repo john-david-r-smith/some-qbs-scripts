@@ -1,0 +1,8 @@
+[Unit]
+Description=check whether a job is running and shuts down if it is not running after one minute.
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/bash -c 'cnt=60;while [[ $cnt > 0 ]]; do cnt=$(($cnt-1));if ! [[ "" == $(DISPLAY=:0 xdotool search -name --onlyvisible .) ]]; then exit; fi; sleep 1; done; if [[ "" == $(DISPLAY=:0 xdotool search -name --onlyvisible .) ]]; then sudo shutdown now;fi;'
+
+

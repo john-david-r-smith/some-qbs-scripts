@@ -1,8 +1,0 @@
-[Unit]
-Description=check whether a job is running and shuts down if it is not running after one minute.
-
-[Service]
-Type=oneshot
-ExecStart=/home/user/check.sh %i
-RemainAfterActive=yes
-
