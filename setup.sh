@@ -18,6 +18,7 @@ add_to_rc()
 }
 
 #autoshutdown
+sudo dnf install xdotools
 add_to_rc "systemctl start autoshutdown.timer";
 #autocp
 sudo dnf install -y inotify-tools;
